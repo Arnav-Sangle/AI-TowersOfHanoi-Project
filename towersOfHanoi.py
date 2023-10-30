@@ -6,7 +6,7 @@ screen = pygame.display.set_mode((640, 480))
 clock = pygame.time.Clock()
 
 game_done = False
-framerate = 20
+framerate = 10
 font = pygame.font.SysFont('sans serif', 25)
 
 # game vars:
@@ -31,12 +31,11 @@ bright_green = (0, 255, 0)
 dark_green = (0, 150, 0)
 brown = (160,82,45)
 
+
 #some testing vars
 gtuple=()
 animation=False
 que=[]
-towerFill=[int(0), int(0), int(0)]
-towerFill[0]=n_disks
 
 class Button():
     def __init__(self, x, y, w, h, buttonText='Button', onclickFunction=None, onePress=False):
@@ -78,7 +77,8 @@ class Button():
         
         screen.blit(self.buttonSurface, self.buttonRect)
 
-
+    # def check_click():
+        
 
 def blit_text(screen, text, midtop, aa=True, font=None, font_name = None, size = None, color=(255,0,0)):
     if font is None:                                    # font option is provided to save memory if font is
@@ -130,7 +130,7 @@ def game_over(): # game over screen
     if min_steps==steps:
         blit_text(screen, 'You finished in minumum steps!', (320, 300), font_name='mono', size=26, color=green)
     pygame.display.flip()
-    time.sleep(2)   # wait for 2 secs 
+    time.sleep(5)   # wait for 2 secs 
     pygame.quit()   #pygame exit
     sys.exit()  #console exit
 
@@ -145,17 +145,94 @@ def draw_towers():
     btn = Button(50, 50, 50, 50, "Solve", lambda: toh(n_disks, 0, 2, 1))
     btn.draw()
 
+
+def left():
+    global floating
+    global pointing_at, floater   
+    if not floating:#up
+     for disk in disks[::-1]:
+                    if disk['tower'] == pointing_at:
+                        floating = True
+                        floater = disks.index(disk)
+                        disk['rect'].midtop = (towers_midx[pointing_at], 100)
+                        break
+    time.sleep(0.5)
+    
+    if floating:
+                    pointing_at = (pointing_at-1)%3
+                    disks[floater]['rect'].midtop = (towers_midx[pointing_at], 100)
+                    disks[floater]['tower'] = pointing_at
+    time.sleep(0.5)
+    
+        
+def right():
+    global floating
+    global pointing_at, floater   
+    if not floating:#up
+      for disk in disks[::-1]:
+                    if disk['tower'] == pointing_at:
+                        floating = True
+                        floater = disks.index(disk)
+                        disk['rect'].midtop = (towers_midx[pointing_at], 100)
+                        break
+    time.sleep(0.5)
+    
+    if floating:
+                    pointing_at = (pointing_at+1)%3#RIGHT
+                    disks[floater]['rect'].midtop = (towers_midx[pointing_at], 100)
+                    disks[floater]['tower'] = pointing_at    
+    time.sleep(0.5)              
+           
+def down():
+  global floating
+  global pointing_at, floater ,steps
+  if floating:
+   for disk in disks[::-1]:
+                    if disk['tower'] == pointing_at and disks.index(disk)!=floater:
+                        if disk['val']>disks[floater]['val']:
+                            floating = False
+                            disks[floater]['rect'].midbottom = (towers_midx[pointing_at], disk['rect'].top-1)
+                            steps += 1
+                        break
+   else: 
+                    floating = False
+                    disks[floater]['rect'].midbottom = (towers_midx[pointing_at], 400-10)
+                    steps+=1
+
+def animate( start ,  end):
+    global pointing_at
+    
+
+    pointing_at=start
+    if start<end:
+        right()
+        print(pointing_at)
+        if pointing_at!=end:
+            right()
+            print(pointing_at)
+            down()
+        else:
+            down()
+    else:
+        left()
+        print(pointing_at)
+        if pointing_at!=end:
+            left()
+            print(pointing_at)
+            down()
+        else:
+            down()
+
     
 
 def make_disks():
-    global n_disks, disks, dHeight
+    global n_disks, disks
     disks = []
     height = 100/n_disks
-    dHeight = height
     ypos = 390 - height
     width = n_disks * 10
     for i in range(n_disks):
-        disk = {}                                                   #empty dictioinary
+        disk = {}
         disk['rect'] = pygame.Rect(0, 0, width, height)
         disk['rect'].midtop = (120, ypos)
         disk['val'] = n_disks-i
@@ -183,7 +260,7 @@ def check_won():
         if disk['tower'] != 2:
             over = False
     if over:
-        time.sleep(0.2)
+        time.sleep(4)
         game_over()
 
 def reset():
@@ -197,106 +274,48 @@ def reset():
 
 
 
+# class Counter(object) :
+#     def __init__(self, fun) :
+#         self._fun = fun
+#         self.counter=0
+#     def __call__(self,*args, **kwargs) :
+#         self.counter += 1
+#         return self._fun(*args, **kwargs)
 
+def incNo():
+    global n
+    n+=1
+    print(n)
 
 def toh(n, start, end, other):
-    global gtuple, que
-
+    #has no effect
+    global gtuple,que
+    global steps
     if(n==1):
-        # print(start, '->', end)
-        # animate(start, end)
-
+        
+        print(start, '->', end)
         tup=(start,end)
         gtuple+=(tup,)
     else:
         toh(n-1, start, other, end)
-        
-        # print(start, '->', end)
-        # animate(start, end)
-
+     
+        print(start, '->', end)
         tup=(start,end)
         gtuple+=(tup,)
-
         toh(n-1, other, end, start)
-    
     que=list(gtuple)
+    return 0
 
 
-def up(start):
-    global floating, floater
-    global towerFill
-
-    if not floating:
-        for disk in disks[::-1]:
-            # print("start tower", disk['tower'])
-            if disk['tower'] == start:
-                floating = True
-                floater = disks.index(disk)
-                towerFill[start] -= 1
-                disk['rect'].midtop = (towers_midx[start], 100)
-                # disk['rect'].top -= 1
-                break
-    time.sleep(0.5)
-
-def side(end):
-    global floating, floater
-
-    if floating:
-        # if(end>start):
-        #     disks[floater]['rect'].right += 1
-        # else:
-        #     disks[floater]['rect'].left += 1
-        disks[floater]['rect'].midtop = (towers_midx[end], 100)
-        disks[floater]['tower'] = end
-    time.sleep(0.5)
-
-def down(end):
-    global floating, floater
-    global steps, towerFill
-
-    if floating:
-        for disk in disks[::-1]:
-            if disk['tower'] == end and disks.index(disk)!=floater:
-                # if disk['val']>disks[floater]['val']:    # will always be true
-                if towerFill[end] > 0:
-                    floating = False
-                    print("disktop =" ,disk['rect'].top)
-                    disks[floater]['rect'].midbottom = (towers_midx[end], disk['rect'].top-1)
-                        # disks[floater]['rect'].bottom -= 1
-                    towerFill[end] += 1
-                    steps += 1
-                    print("step = ", steps)
-                    break
-        else: 
-            floating = False
-            disks[floater]['rect'].midbottom = (towers_midx[end], 400-10)
-                # disks[floater]['rect'].bottom -= 1
-            towerFill[end] += 1
-            steps += 1
-            
-
-    time.sleep(0.5)
 
 
-def animate(start, end):
-    # global pointing_at
-    # pointing_at=start
-    global towerFill
-
-    up(start)
-    side(end)
-    down(end)
-
-    # for i in range(3):
-    #     print("towerFill[",i,"] = ", towerFill[i])
-
-    
 
 menu_screen()
 make_disks()
 
 # main game loop:
 while not game_done:
+    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             game_done = True
@@ -333,44 +352,48 @@ while not game_done:
                 else: 
                     floating = False
                     disks[floater]['rect'].midbottom = (towers_midx[pointing_at], 400-10)
-                    steps += 1
-        
+                    if animate:#might be uneccessary
+                     steps += 1
+            
         if event.type==pygame.MOUSEBUTTONDOWN:
             event_x, event_y = event.pos
+
             # Check if the event position is inside the bounding box
-            if (50<= event_x <= 50 + 50) and (50 <= event_y <= 50 + 50):
+            if (50<= event_x <= 50 + 50) and \
+               (50 <= event_y <= 50 + 50):
                 toh(n_disks, 0, 2, 1)
-                # print("Event position is inside the bounding box")
+                print("Event position is inside the bounding box")
                 animation=True
                 steps=0
-
-    screen.fill(white)
+    if animation:
+       sum=2**n_disks-1
+       i=0
+       if sum>i:
+        item=que.pop(0)
+        a,b=item
+        print(item)
+        
+        animate(a,b)
+        i+=1
+    
+       else:
+          
+          animation=False
+          
+    screen.fill(white) 
     draw_towers()
     draw_disks()
     draw_ptr()
 
-
-    if animation:
-        # global floating
-        # global pointing_at, floater, steps
-
-       sum=2**n_disks-1
-       i=0
-       
-       if sum>i:
-        item=que.pop(0)
-        # print(item)
-        a,b=item
-        print(a, "->", b)
-
-        animate(a, b)
-
-        i+=1
-
-       else:
-        animation=False
-
     blit_text(screen, 'Steps: '+str(steps), (320, 20), font_name='mono', size=30, color=black)
     pygame.display.flip()
+    
     if not floating:check_won()
     clock.tick(framerate)
+    
+    
+    
+
+    
+    
+# print(gtuple)
